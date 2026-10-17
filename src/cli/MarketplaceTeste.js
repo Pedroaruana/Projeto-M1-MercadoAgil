@@ -1,6 +1,6 @@
+// Simula respostas do serviço para testar o menu.
 import { sucesso, falha } from '../utils/resposta.js'
 
-// Simula respostas do serviço para testar o menu.
 export class MarketplaceTeste {
   listarClientes() {
     return sucesso([
