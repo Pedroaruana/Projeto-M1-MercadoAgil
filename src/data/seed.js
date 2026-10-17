@@ -107,6 +107,17 @@ export const seed = {
     },
   ],
 
+  estoque: [
+    { produtoId: 1, quantidade: 1 },  // Mouse
+    { produtoId: 2, quantidade: 10 }, // Livro de JavaScript
+    { produtoId: 3, quantidade: 10 }, // Teclado Mecânico
+    { produtoId: 4, quantidade: 10 }, // Livro de Algoritmos
+    { produtoId: 5, quantidade: 10 }, // Cadeira de Escritório
+    { produtoId: 6, quantidade: 10 }, // Luminária de Mesa
+    { produtoId: 7, quantidade: 10 }, // Fone de Ouvido
+    { produtoId: 8, quantidade: 10 }, // Livro de Estruturas de Dados
+  ],
+  
   cupons: [
     {
       codigo: 'BEMVINDO10',
@@ -114,15 +125,15 @@ export const seed = {
       valor: 10,
       validade: '2027-12-31',
       valorMinimo: 100,
-      cumulativo: false,
+      cumulativo: true,
     },
     {
-      codigo: 'DESCONTO20',
+      codigo: 'PDA15',
       tipo: 'fixo',
-      valor: 20,
+      valor: 15,
       validade: '2027-12-31',
-      valorMinimo: 150,
-      cumulativo: false,
+      valorMinimo: 0,
+      cumulativo: true,
     },
     {
       codigo: 'FRETEZERO',
