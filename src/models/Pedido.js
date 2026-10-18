@@ -81,6 +81,15 @@ export class Pedido {
     return arredondar(Math.max(0, this.subtotal - this.desconto + this.frete))
   }
 
+  // Provisório!! a issue #6 troca por confirmar de verdade (confere e baixa estoque)
+  confirmar() {
+    this.#status = STATUS_PEDIDO.CONFIRMADO
+  }
+
+  cancelar() {
+    this.#status = STATUS_PEDIDO.CANCELADO
+  }
+
   // Método para verificar o status do pedido
   #garantirAberto() {
     if (this.#status !== STATUS_PEDIDO.ABERTO) {
