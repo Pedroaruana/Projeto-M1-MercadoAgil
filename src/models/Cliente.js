@@ -1,6 +1,7 @@
 // Nome, e-mail, CPF e região de entrega.
 export class Cliente {
-    constructor(nome, email, cpf, regiao) {
+    constructor(id, nome, email, cpf, regiao) {
+        this.id = id;
         this.nome = nome;
         this.email = email;
         this.cpf = cpf;
