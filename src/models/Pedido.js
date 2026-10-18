@@ -80,4 +80,72 @@ export class Pedido {
   get total() {
     return arredondar(Math.max(0, this.subtotal - this.desconto + this.frete))
   }
+
+  // Provisório!! a issue #6 troca por confirmar de verdade (confere e baixa estoque)
+  confirmar() {
+    this.#status = STATUS_PEDIDO.CONFIRMADO
+  }
+
+  cancelar() {
+    this.#status = STATUS_PEDIDO.CANCELADO
+  }
+
+  // Método para verificar o status do pedido
+  #garantirAberto() {
+    if (this.#status !== STATUS_PEDIDO.ABERTO) {
+      throw new Error(`Pedido não pode ser alterado com status ${this.#status}`)
+    }
+  }
+
+  // Adiciona um produto. Se já existir no pedido, soma a quantidade.
+  adicionarItem(produto, quantidade) {
+    this.#garantirAberto()
+
+    // Verifica se um produto existe e verifica se o produto tem um ID, o ID é usado para saber se o item já está no pedido
+    if (!produto || produto.id === undefined) {
+      throw new Error(`Produto inválido`)
+    }
+
+    // Verifica se a quantidade é um número inteiro e se é maior que 0
+    if (!Number.isInteger(quantidade) || quantidade <= 0) {
+      throw new Error(`Quantidade inválida: ${quantidade}. Quantidade deve ser maior que zero.`)
+    }
+
+    // Faz uma procura pelo item no pedido para verificar se já existe
+    const existente = this.#itens.find((item) => item.produto.id === produto.id)
+
+    // Em caso de item já existente, cria uma váriavel atualizado para somar a quantidade dos itens já existentes com o recém adicionado
+    // Mapeia a lista de itens para atualizar o novo item
+    if (existente) {
+      const atualizado = { ...existente, quantidade: existente.quantidade + quantidade}
+      this.#itens = this.#itens.map((item) => (item === existente ? atualizado : item))
+      return { ...atualizado }
+    }
+
+    // Em caso de um novo produto, adiciona a lista de itens
+    const novo = { produto, quantidade }
+    this.#itens = [ ...this.#itens, novo]
+    return { ...novo } 
+  }
+
+  // Remover o item inteiro pelo id do produto. Devolve o item removido. 
+  removerItem(produtoId) {
+    this.#garantirAberto()
+
+    // Faz uma procura pelo indice do item informado
+    const indice = this.#itens.findIndex((item) => item.produto.id === produtoId)
+
+    // Caso o item não exista na lista, indice fica -1 e retorna uma mensagem de erro
+    if (indice === -1) {
+      throw new Error(`Item não encontrado no pedido: ${produtoId}`)
+    }
+
+    // Váriavel removido guarda o item que queremos tirar da lista pois iremos retorna ele para o usuario
+    // Filter percorre a lista e mantém os itens quem forem true
+    const removido = this.#itens[indice]
+    this.#itens = this.#itens.filter((_, i) => i !== indice)
+    return { ...removido }
+
+  }
 }
+
