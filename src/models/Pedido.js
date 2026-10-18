@@ -6,9 +6,10 @@ import {
   FRETE_POR_REGIAO,
   FRETE_POR_UNIDADE,
   FRETE_GRATIS_A_PARTIR_DE,
+  MAX_CUPONS_POR_PEDIDO,
   STATUS_PEDIDO,
 } from '../config/regras.js'
-import { arredondar } from '../utils/dinheiro.js'
+import { arredondar, formatarReais } from '../utils/dinheiro.js'
 
 export class Pedido {
   #cliente
@@ -146,6 +147,48 @@ export class Pedido {
     this.#itens = this.#itens.filter((_, i) => i !== indice)
     return { ...removido }
 
+  }
+
+  // Aplica um cupom no pedido, se passar em todas as regras. Devolve a lista de cupons do pedido.
+  // O desconto em si (ordem e teto de 30%) é calculado em outra issue.
+  aplicarCupom(cupom) {
+    this.#garantirAberto()
+
+    if (!cupom || typeof cupom.estaValido !== 'function') {
+      throw new Error('Cupom inválido')
+    }
+
+    // Cupom vencido é recusado, mesmo que estivesse válido quando foi cadastrado
+    if (!cupom.estaValido()) {
+      throw new Error(`Cupom ${cupom.codigo} está vencido`)
+    }
+
+    // O subtotal (antes dos descontos) precisa atingir o valor mínimo do cupom
+    if (this.subtotal < cupom.valorMinimo) {
+      throw new Error(
+        `Cupom ${cupom.codigo} exige pedido de no mínimo ${formatarReais(cupom.valorMinimo)} (subtotal atual: ${formatarReais(this.subtotal)})`,
+      )
+    }
+
+    // O mesmo cupom não pode entrar duas vezes
+    if (this.#cupons.some(({ codigo }) => codigo === cupom.codigo)) {
+      throw new Error(`Cupom ${cupom.codigo} já foi aplicado neste pedido`)
+    }
+
+    // No máximo 2 cupons por pedido
+    if (this.#cupons.length >= MAX_CUPONS_POR_PEDIDO) {
+      throw new Error(`Limite de ${MAX_CUPONS_POR_PEDIDO} cupons por pedido atingido`)
+    }
+
+    // Cupom não cumulativo só pode ser usado sozinho (nem como segundo, nem como primeiro)
+    const jaTemNaoCumulativo = this.#cupons.some(({ cumulativo }) => !cumulativo)
+
+    if (this.#cupons.length > 0 && (!cupom.cumulativo || jaTemNaoCumulativo)) {
+      throw new Error(`Cupom ${cupom.codigo} não pode ser combinado com outro cupom`)
+    }
+
+    this.#cupons = [...this.#cupons, cupom]
+    return this.cupons
   }
 }
 
