@@ -80,4 +80,28 @@ export class Pedido {
   get total() {
     return arredondar(Math.max(0, this.subtotal - this.desconto + this.frete))
   }
+
+  // Método para verificar o status do pedido
+  #garantirAberto() {
+    if (this.#status !== STATUS_PEDIDO.ABERTO) {
+      throw new Error(`Pedido não pode ser alterado com status ${this.#status}`)
+    }
+  }
+
+  // Adiciona um produto. Se já existir no pedido, soma a quantidade.
+  adicionarItem(produto, quantidade) {
+    this.#garantirAberto()
+
+    // Verifica se um produto existe e verifica se o produto tem um ID, o ID é usado para saber se o item já está no pedido
+    if (!produto || produto.id === undefined) {
+      throw new Error(`Produto inválido`)
+    }
+
+    // Verifica se a quantidade é um número inteiro e se é maior que 0
+    if (!Number.isInteger(quantidade) || quantidade <= 0) {
+      throw new Error(`Quantidade inválida: ${quantidade}. Quantidade deve ser maior que zero.`)
+    }
+
+
+  }
 }
