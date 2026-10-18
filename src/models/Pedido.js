@@ -119,6 +119,24 @@ export class Pedido {
     return { ...novo } 
   }
 
-  
+  // Remover o item inteiro pelo id do produto. Devolve o item removido. 
+  removerItem(produtoId) {
+    this.#garantirAberto()
 
+    // Faz uma procura pelo indice do item informado
+    const indice = this.#itens.findIndex((item) => item.produto.id === produtoId)
+
+    // Caso o item não exista na lista, indice fica -1 e retorna uma mensagem de erro
+    if (indice === -1) {
+      throw new Error(`Item não encontrado no pedido: ${produtoId}`)
+    }
+
+    // Váriavel removido guarda o item que queremos tirar da lista pois iremos retorna ele para o usuario
+    // Filter percorre a lista e mantém os itens quem forem true
+    const removido = this.#itens[indice]
+    this.#itens = this.#itens.filter((_, i) => i !== indice)
+    return { ...removido }
+
+  }
 }
+
