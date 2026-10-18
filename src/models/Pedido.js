@@ -102,6 +102,23 @@ export class Pedido {
       throw new Error(`Quantidade inválida: ${quantidade}. Quantidade deve ser maior que zero.`)
     }
 
+    // Faz uma procura pelo item no pedido para verificar se já existe
+    const existente = this.#itens.find((item) => item.produto.id === produto.id)
 
+    // Em caso de item já existente, cria uma váriavel atualizado para somar a quantidade dos itens já existentes com o recém adicionado
+    // Mapeia a lista de itens para atualizar o novo item
+    if (existente) {
+      const atualizado = { ...existente, quantidade: existente.quantidade + quantidade}
+      this.#itens = this.#itens.map((item) => (item === existente ? atualizado : item))
+      return { ...atualizado }
+    }
+
+    // Em caso de um novo produto, adiciona a lista de itens
+    const novo = { produto, quantidade }
+    this.#itens = [ ...this.#itens, novo]
+    return { ...novo } 
   }
+
+  
+
 }
