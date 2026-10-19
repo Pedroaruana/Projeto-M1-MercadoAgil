@@ -1,46 +1,163 @@
-import { STATUS_PEDIDO } from '../config/regras.js'
+
+import {
+    STATUS_PEDIDO,
+    COMISSOES,
+    ALIQUOTAS_TRIBUTOS,
+} from '../config/regras.js'
+
 import { arredondar } from '../utils/dinheiro.js'
 
-export const relatorioBasico = (pedidos) => {
-    // Separa somente os pedidos confirmados.
-    const pedidosConfirmados = pedidos.filter(
+const filtrarPedidosConfirmados = (pedidos) =>
+    pedidos.filter(
         (pedido) => pedido.status === STATUS_PEDIDO.CONFIRMADO
-    );
+    )
 
-    // Conta quantos pedidos confirmados existem.
-    const quantidadePedidos = pedidosConfirmados.length
+// Relatório básico já existente.
+export const relatorioBasico = (pedidos) => {
+    const confirmados = filtrarPedidosConfirmados(pedidos)
 
-    // Extrai os totais e soma os valores pagos.
     const faturamentoTotal = arredondar(
-        pedidosConfirmados
-            .map((pedido) => pedido.total)
-            .reduce((soma, total) => arredondar(soma + total), 0)
-    );
+        confirmados.reduce((soma, pedido) => soma + pedido.total, 0)
+    )
 
-    // Calcula a média por pedido; sem confirmados, retorna zero.
+    const quantidadePedidos = confirmados.length
+
     const ticketMedio = quantidadePedidos > 0
         ? arredondar(faturamentoTotal / quantidadePedidos)
         : 0
 
-    //quantidadePedidos > 0: verifica se existe pedido confirmado.
-    //?: se existir, divide o faturamento pela quantidade.
-    // : 0: caso contrário, guarda zero e evita dividir por zero.
-
-    // Soma os descontos somente dos pedidos confirmados.
     const totalDescontos = arredondar(
-        pedidosConfirmados
-            .map((pedido) => pedido.desconto)
-            .reduce((soma, desconto) => arredondar(soma + desconto), 0)
-    );
+        confirmados.reduce(
+            (soma, pedido) => soma + (pedido.desconto ?? 0),
+            0
+        )
+    )
 
     return {
         faturamentoTotal,
         quantidadePedidos,
         ticketMedio,
-        totalDescontos
-    };
-};
-//pedidos recebe a lista completa.
-//filter cria uma nova lista com os pedidos que passam na condição.
-//pedido.status === STATUS_PEDIDO.CONFIRMADO verifica se cada pedido está confirmado.
-//return devolve um objeto com os indicadores calculados dos pedidos confirmados.
+        totalDescontos,
+    }
+}
+
+// 1. Faturamento bruto por categoria, antes dos descontos.
+export const faturamentoPorCategoria = (pedidos) => {
+    const totais = filtrarPedidosConfirmados(pedidos).reduce(
+        (categorias, pedido) => {
+            pedido.itens.forEach(({ produto, quantidade }) => {
+                const categoria = produto.categoria
+                const valor = produto.preco * quantidade
+
+                categorias[categoria] =
+                    (categorias[categoria] ?? 0) + valor
+            })
+
+            return categorias
+        },
+        {}
+    )
+
+    return Object.fromEntries(
+        Object.entries(totais).map(([categoria, valor]) => [
+            categoria,
+            arredondar(valor),
+        ])
+    )
+}
+
+// 2. Repasse e comissão por vendedor.
+export const repassePorVendedor = (pedidos, vendedores = []) => {
+    const nomes = new Map(
+        vendedores.map(({ id, nome }) => [id, nome])
+    )
+
+    const totais = filtrarPedidosConfirmados(pedidos).reduce(
+        (resultado, pedido) => {
+            pedido.itens.forEach(({ produto, quantidade }) => {
+                const { vendedorId, categoria, preco } = produto
+                const bruto = preco * quantidade
+                const comissao = bruto * (COMISSOES[categoria] ?? 0)
+
+                if (!resultado[vendedorId]) {
+                    resultado[vendedorId] = {
+                        vendedorId,
+                        vendedor: nomes.get(vendedorId)
+                            ?? `Vendedor ${vendedorId}`,
+                        valorBruto: 0,
+                        comissao: 0,
+                    }
+                }
+
+                resultado[vendedorId].valorBruto += bruto
+                resultado[vendedorId].comissao += comissao
+            })
+
+            return resultado
+        },
+        {}
+    )
+
+    return Object.values(totais).map((vendedor) => {
+        const valorBruto = arredondar(vendedor.valorBruto)
+        const comissao = arredondar(vendedor.comissao)
+
+        return {
+            ...vendedor,
+            valorBruto,
+            comissao,
+            valorARepassar: arredondar(valorBruto - comissao),
+        }
+    })
+}
+
+// 3. Três produtos com maior quantidade vendida.
+export const top3ProdutosMaisVendidos = (pedidos) => {
+    const totais = filtrarPedidosConfirmados(pedidos).reduce(
+        (resultado, pedido) => {
+            pedido.itens.forEach(({ produto, quantidade }) => {
+                if (!resultado[produto.id]) {
+                    resultado[produto.id] = {
+                        produtoId: produto.id,
+                        nome: produto.nome,
+                        quantidadeVendida: 0,
+                    }
+                }
+
+                resultado[produto.id].quantidadeVendida += quantidade
+            })
+
+            return resultado
+        },
+        {}
+    )
+
+    return Object.values(totais)
+        .sort((a, b) => b.quantidadeVendida - a.quantidadeVendida)
+        .slice(0, 3)
+}
+
+// 4. Total de tributos e comissões sobre os itens brutos.
+export const totalTributosEComissoes = (pedidos) => {
+    const totais = filtrarPedidosConfirmados(pedidos).reduce(
+        (resultado, pedido) => {
+            pedido.itens.forEach(({ produto, quantidade }) => {
+                const valor = produto.preco * quantidade
+
+                resultado.tributos +=
+                    valor * (ALIQUOTAS_TRIBUTOS[produto.categoria] ?? 0)
+
+                resultado.comissoes +=
+                    valor * (COMISSOES[produto.categoria] ?? 0)
+            })
+
+            return resultado
+        },
+        { tributos: 0, comissoes: 0 }
+    )
+
+    return {
+        totalTributos: arredondar(totais.tributos),
+        totalComissoes: arredondar(totais.comissoes),
+    }
+}
