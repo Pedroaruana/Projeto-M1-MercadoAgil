@@ -58,32 +58,24 @@ export class Pedido {
   // conversas com a equipe PERMITIU A APLICAÇÃO DE 2 CUPONS PERCENTUAIS SUCESSIVAS
   get desconto() {
     const subtotal = this.subtotal
-    const ordenados = [...this.#cupons].sort(
-      (a, b) => ORDEM_CUPONS.indexOf(a.tipo) - ORDEM_CUPONS.indexOf(b.tipo),
+    
+    // filtrando os tipos de cupons
+    const percentuais = this.#cupons.filter(({ tipo }) => tipo === 'percentual')
+    const fixos = this.#cupons.filter(({ tipo }) => tipo === 'fixo')
+
+    // 1º: percentuais, cada um sobre o que ainda resta
+    const descontoPercentual = percentuais.reduce(
+      (soma, { valor }) => soma + ((subtotal - soma) * valor) / 100, 0
     )
 
-    let restante = subtotal
-    let soma = 0
+    // 2º: fixos, somados
+    const descontoFixo = Math.min(
+      fixos.reduce((soma, { valor }) => soma + valor, 0),
+      subtotal - descontoPercentual,
+    )
 
-    for (const cupom of ordenados) {
-      let valor = 0
-
-      // verifica o tipo do cupom e aplica o desconto baseado no restante do subtotal atual
-      // permite aplicar 2 cupons percentuais de forma sucessiva 
-      if (cupom.tipo === 'percentual') {
-        valor = (restante * cupom.valor) / 100
-      } else if (cupom.tipo === 'fixo') {
-        valor = cupom.valor
-      }
-
-      //evita que o cupom retire do pedido mais do que resta pagar, evitando que o valor fique negativo
-      valor = Math.min(valor, restante)
-      soma += valor // guarda a soma dos descontos
-      restante -= valor // guarda o valor restante que o cliente vai pagar
-    }
-
-    // Retorna o menor valor passado, se a soma dos descontos for maior que o teto, retorn o teto
-    return arredondar(Math.min(soma, subtotal * TETO_DESCONTO))
+    // verificação de teto de 30%
+    return arredondar(Math.min(descontoPercentual + descontoFixo, subtotal * TETO_DESCONTO))
   }
 
   // Frete = taxa da região + R$ 1,50 por unidade. Um só por pedido, mesmo com vendedores diferentes.
