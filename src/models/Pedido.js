@@ -7,7 +7,9 @@ import {
   FRETE_POR_UNIDADE,
   FRETE_GRATIS_A_PARTIR_DE,
   MAX_CUPONS_POR_PEDIDO,
+  ORDEM_CUPONS,
   STATUS_PEDIDO,
+  TETO_DESCONTO,
 } from '../config/regras.js'
 import { arredondar, formatarReais } from '../utils/dinheiro.js'
 
@@ -52,9 +54,28 @@ export class Pedido {
     return this.#itens.reduce((soma, { quantidade }) => soma + quantidade, 0)
   }
 
-  // Desconto total dos cupons. Por enquanto 0: percentual, fixo e teto de 30% entram na issue de descontos.
+  // Desconto total dos cupons. 
+  // conversas com a equipe PERMITIU A APLICAÇÃO DE 2 CUPONS PERCENTUAIS SUCESSIVAS
   get desconto() {
-    return 0
+    const subtotal = this.subtotal
+    
+    // filtrando os tipos de cupons
+    const percentuais = this.#cupons.filter(({ tipo }) => tipo === 'percentual')
+    const fixos = this.#cupons.filter(({ tipo }) => tipo === 'fixo')
+
+    // 1º: percentuais, cada um sobre o que ainda resta
+    const descontoPercentual = percentuais.reduce(
+      (soma, { valor }) => soma + ((subtotal - soma) * valor) / 100, 0
+    )
+
+    // 2º: fixos, somados
+    const descontoFixo = Math.min(
+      fixos.reduce((soma, { valor }) => soma + valor, 0),
+      subtotal - descontoPercentual,
+    )
+
+    // verificação de teto de 30%
+    return arredondar(Math.min(descontoPercentual + descontoFixo, subtotal * TETO_DESCONTO))
   }
 
   // Frete = taxa da região + R$ 1,50 por unidade. Um só por pedido, mesmo com vendedores diferentes.
@@ -190,5 +211,8 @@ export class Pedido {
     this.#cupons = [...this.#cupons, cupom]
     return this.cupons
   }
+
+
+
 }
 
