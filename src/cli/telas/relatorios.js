@@ -2,7 +2,7 @@
 // Relatórios financeiros. O Marketplace já devolve só pedidos CONFIRMADOS;
 // aqui só mostramos os números.
 import { executarMenu, mostrarResposta, titulo, pegar, reais } from '../ui.js';
-
+import { exibirRelatorioBasico } from '../exibirRelatorioBasico.js';
 // Campos que são quantidade/identificação (não são dinheiro).
 const NAO_MONETARIOS = ['id', 'posicao', 'quantidade', 'qtd', 'unidades', 'vendidos', 'pedidos'];
 
@@ -44,17 +44,7 @@ export function telaRelatorios({ servico, perguntar }) {
       console.log('Ainda não há pedidos confirmados. Confirme um pedido para ver o relatório.');
       return;
     }
-    console.log(`Pedidos confirmados: ${quantidade}`);
-    console.log(`Faturamento total:   ${reais(pegar(dados, 'faturamentoTotal', 'faturamento', 'total'))}`);
-    console.log(`Ticket médio:        ${reais(pegar(dados, 'ticketMedio', 'ticket'))}`);
-
-    // Extras (só aparecem se o Marketplace devolver)
-    const extras = [
-      ['Total de descontos', 'totalDescontos'],
-      ['Total de tributos', 'totalTributos'],
-      ['Comissão do marketplace', 'totalComissao'],
-    ].filter(([, chave]) => dados[chave] !== undefined);
-    console.log(extras.map(([rotulo, chave]) => `${`${rotulo}:`.padEnd(21)}${reais(dados[chave])}`).join('\n'));
+    exibirRelatorioBasico(dados);
   };
 
   const porCategoria = async () => {
