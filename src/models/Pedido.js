@@ -108,7 +108,7 @@ export class Pedido {
   get tributos() {
     return arredondar(
       this.#itens.reduce((soma, { produto, quantidade }) => {
-        const porcentagem = ALIQUOTAS_TRIBUTOS[produto.categoria]
+        const porcentagem = ALIQUOTAS_TRIBUTOS[produto.categoria] ?? 0 // guarda a porcentagem da aliquota do item baseado na categoria dele
         return soma + produto.preco * quantidade * porcentagem
       }, 0),
     )
@@ -117,10 +117,35 @@ export class Pedido {
   get comissao() {
     return arredondar(
       this.#itens.reduce((soma, { produto, quantidade }) => {
-        const porcentagem = COMISSOES[produto.categoria]
+        const porcentagem = COMISSOES[produto.categoria] ?? 0 // guarda a porcentagem da comissão baseado na categoria do item
         return soma + produto.preco * quantidade * porcentagem
       }, 0),
     )
+  }
+
+  
+  get repasses() {
+    if (this.#status !== STATUS_PEDIDO.CONFIRMADO) {
+      return {}
+    }
+
+    return this.#itens.reduce((resultado, { produto, quantidade }) => {
+      const { vendedorId, categoria, preco } = produto
+      const bruto = preco * quantidade
+      const comissao = bruto * (COMISSOES[categoria] ?? 0)
+
+      if (!resultado[vendedorId]) {
+      resultado[vendedorId] = { bruto: 0, comissao: 0, repasse: 0 }
+      }
+
+      const vendedor = resultado[vendedorId]
+
+      vendedor.bruto = arredondar(vendedor.bruto + bruto)
+      vendedor.comissao = arredondar(vendedor.comissao + comissao)
+      vendedor.repasse = arredondar(vendedor.bruto - vendedor.comissao)
+
+      return resultado
+    }, {})
   }
 
   // Itens no formato que o Estoque entende: { produtoId, nome, quantidade }
