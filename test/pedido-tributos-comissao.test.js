@@ -15,7 +15,12 @@ const novoPedido = () =>
     { produto: livro, quantidade: 1 },
   ])
 
-  test('tributos do exemplo: R$14,40', () => {
+test('tributos do exemplo: R$14,40', () => {
     const pedido = novoPedido()
     assert.equal(pedido.tributos, 14.4)
-  })
+})
+
+test('comissão do exemplo: R$21,60', () => {
+    const pedido = novoPedido()
+    assert.equal(pedido.comissao, 21.6)
+})

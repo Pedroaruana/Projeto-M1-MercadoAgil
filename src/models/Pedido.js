@@ -11,6 +11,7 @@ import {
   STATUS_PEDIDO,
   TETO_DESCONTO,
   ALIQUOTAS_TRIBUTOS,
+  COMISSOES,
 } from '../config/regras.js'
 import { arredondar, formatarReais } from '../utils/dinheiro.js'
 
@@ -109,7 +110,16 @@ export class Pedido {
       this.#itens.reduce((soma, { produto, quantidade }) => {
         const porcentagem = ALIQUOTAS_TRIBUTOS[produto.categoria]
         return soma + produto.preco * quantidade * porcentagem
-      }, 0)
+      }, 0),
+    )
+  }
+
+  get comissao() {
+    return arredondar(
+      this.#itens.reduce((soma, { produto, quantidade }) => {
+        const porcentagem = COMISSOES[produto.categoria]
+        return soma + produto.preco * quantidade * porcentagem
+      }, 0),
     )
   }
 
