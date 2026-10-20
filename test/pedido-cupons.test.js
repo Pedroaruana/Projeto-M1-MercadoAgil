@@ -2,6 +2,14 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Pedido } from '../src/models/Pedido.js'
 import { CupomDesconto } from '../src/models/CupomDesconto.js'
+import { Estoque } from '../src/models/Estoque.js'
+
+// estoque com bastante de cada produto, só para poder confirmar o pedido nos testes
+const estoqueCheio = () => {
+  const estoque = new Estoque()
+  ;[1, 2].forEach((id) => estoque.definirQuantidade(id, 100))
+  return estoque
+}
 
 const mouse = { id: 1, nome: 'Mouse', preco: 120, categoria: 'eletronicos', vendedorId: 1 }
 const livro = { id: 2, nome: 'Livro de JavaScript', preco: 80, categoria: 'livros', vendedorId: 2 }
@@ -100,7 +108,7 @@ test('recusa cupom vazio ou que não é um cupom', () => {
 
 test('pedido confirmado ou cancelado não aceita cupom', () => {
   const confirmado = novoPedido()
-  confirmado.confirmar()
+  confirmado.confirmar(estoqueCheio())
   assert.throws(() => confirmado.aplicarCupom(bemvindo10), /status confirmado/)
 
   const cancelado = novoPedido()

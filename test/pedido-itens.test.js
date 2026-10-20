@@ -1,6 +1,14 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Pedido } from '../src/models/Pedido.js'
+import { Estoque } from '../src/models/Estoque.js'
+
+// estoque com bastante de cada produto, só para poder confirmar o pedido nos testes
+const estoqueCheio = () => {
+    const estoque = new Estoque()
+    ;[1, 2, 3].forEach((id) => estoque.definirQuantidade(id, 100))
+    return estoque
+}
 
 const mouse = { id: 1, nome: 'Mouse', preco: 120, categoria: 'eletronicos', vendedorId: 1 }
 const livro = { id: 2, nome: 'Livro de JavaScript', preco: 80, categoria: 'livros', vendedorId: 2 }
@@ -101,7 +109,7 @@ test('pedido de R$ 360 tem frete grátis e total igual ao subtotal', () => {
 test('pedido confirmado rejeita alteração', () => {
     const pedido = new Pedido(clienteNordeste)
     pedido.adicionarItem(mouse, 1)
-    pedido.confirmar()
+    pedido.confirmar(estoqueCheio())
 
     assert.throws(() => pedido.adicionarItem(livro, 1), /não pode ser alterado/)
     assert.throws(() => pedido.removerItem(mouse.id), /não pode ser alterado/)

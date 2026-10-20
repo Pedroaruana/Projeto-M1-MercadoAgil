@@ -103,13 +103,63 @@ export class Pedido {
     return arredondar(Math.max(0, this.subtotal - this.desconto + this.frete))
   }
 
-  // Provisório!! a issue #6 troca por confirmar de verdade (confere e baixa estoque)
-  confirmar() {
-    this.#status = STATUS_PEDIDO.CONFIRMADO
+  // Itens no formato que o Estoque entende: { produtoId, nome, quantidade }
+  #itensParaEstoque() {
+    return this.#itens.map(({ produto, quantidade }) => ({
+      produtoId: produto.id,
+      nome: produto.nome,
+      quantidade,
+    }))
   }
 
-  cancelar() {
+  // Erro que leva a lista completa de mensagens do Estoque em `erros`
+  #erroDoEstoque(erros) {
+    return Object.assign(new Error(erros.join(' | ')), { erros })
+  }
+
+  // Confirma o pedido: verifica TODOS os itens no estoque de uma vez (tudo ou nada).
+  // Se faltar qualquer item, nada é confirmado e nada sai do estoque.
+  confirmar(estoque) {
+    if (this.#status !== STATUS_PEDIDO.ABERTO) {
+      throw new Error(`Pedido não pode ser confirmado com status ${this.#status}`)
+    }
+
+    if (this.#itens.length === 0) {
+      throw new Error('Pedido vazio não pode ser confirmado')
+    }
+
+    // baixar() confere todos os itens antes de mexer em qualquer quantidade
+    const resultado = estoque.baixar(this.#itensParaEstoque())
+
+    if (!resultado.ok) {
+      throw this.#erroDoEstoque(resultado.erros)
+    }
+
+    this.#status = STATUS_PEDIDO.CONFIRMADO
+    return this.#status
+  }
+
+  // Cancela o pedido. Pedido confirmado devolve os itens ao estoque.
+  // Pedido aberto só muda o status, não mexe no estoque.
+  cancelar(estoque) {
+    if (this.#status === STATUS_PEDIDO.CANCELADO) {
+      throw new Error('Pedido já está cancelado')
+    }
+
+    if (this.#status === STATUS_PEDIDO.CONFIRMADO) {
+      if (!estoque) {
+        throw new Error('Informe o estoque para cancelar um pedido confirmado')
+      }
+
+      const resultado = estoque.devolver(this.#itensParaEstoque())
+
+      if (!resultado.ok) {
+        throw this.#erroDoEstoque(resultado.erros)
+      }
+    }
+
     this.#status = STATUS_PEDIDO.CANCELADO
+    return this.#status
   }
 
   // Método para verificar o status do pedido
