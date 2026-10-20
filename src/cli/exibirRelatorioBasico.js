@@ -21,11 +21,14 @@ export const exibirRelatorioBasico = (relatorio) => {
     ]
 
     extras.forEach(([rotulo, campo]) => {
-        if (relatorio[campo] !== undefined) {
-            indicadores[rotulo] = formatarReais(relatorio[campo])
+        const valor = campo === 'totalComissao'
+            ? relatorio.totalComissao ?? relatorio.totalComissoes
+            : relatorio[campo]
+
+        if (valor !== undefined) {
+            indicadores[rotulo] = formatarReais(valor)
         }
     })
-
     console.table(indicadores)
 }
 //export permite usar a função em outro arquivo depois.
