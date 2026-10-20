@@ -10,6 +10,7 @@ import {
   ORDEM_CUPONS,
   STATUS_PEDIDO,
   TETO_DESCONTO,
+  ALIQUOTAS_TRIBUTOS,
 } from '../config/regras.js'
 import { arredondar, formatarReais } from '../utils/dinheiro.js'
 
@@ -101,6 +102,15 @@ export class Pedido {
   // Total = subtotal - descontos + frete. Nunca fica negativo.
   get total() {
     return arredondar(Math.max(0, this.subtotal - this.desconto + this.frete))
+  }
+
+  get tributos() {
+    return arredondar(
+      this.#itens.reduce((soma, { produto, quantidade }) => {
+        const porcentagem = ALIQUOTAS_TRIBUTOS[produto.categoria]
+        return soma + produto.preco * quantidade * porcentagem
+      }, 0)
+    )
   }
 
   // Itens no formato que o Estoque entende: { produtoId, nome, quantidade }
