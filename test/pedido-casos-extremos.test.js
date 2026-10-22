@@ -46,3 +46,15 @@ test('CASOS EXTREMOS - cancelar pedido já cancelado dá erro claro', () => {
     assert.equal(pedido.status, 'cancelado')
     assert.throws(() => pedido.cancelar(), /Pedido já está cancelado/)
 })
+
+test('CASOS EXTREMOS - pedido confirmado recusa mudança de item', () => {
+    const pedido = novoPedido()
+    pedido.confirmar(estoqueComSaldo())
+
+    assert.throws(() => pedido.adicionarItem(mouse, 1), /não pode ser alterado/)
+    assert.throws(() => pedido.removerItem(mouse.id), /não pode ser alterado/)
+    assert.throws(() => pedido.aplicarCupom(bemvindo10), /não pode ser alterado/)
+
+    assert.equal(pedido.itens.length, 2)
+    assert.equal(pedido.cupons.length, 0)
+})
