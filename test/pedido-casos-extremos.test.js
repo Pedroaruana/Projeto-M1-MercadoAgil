@@ -30,3 +30,11 @@ test('CASOS EXTREMOS - pedido vazio não pode ser confirmado', () => {
     assert.throws(() => pedido.confirmar(estoqueComSaldo()), /Pedido vazio não pode ser confirmado/)
     assert.equal(pedido.status, 'aberto')
 })
+
+test('CASOS EXTREMOS - Cupom repetido é recusado', () => {
+    const pedido = novoPedido()
+    pedido.aplicarCupom(bemvindo10)
+
+    assert.throws(() => pedido.aplicarCupom(bemvindo10), /já foi aplicado/)
+    assert.equal(pedido.cupons.length, 1)
+})
