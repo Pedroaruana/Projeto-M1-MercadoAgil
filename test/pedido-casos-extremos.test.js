@@ -80,3 +80,11 @@ test('CASOS EXTREMOS - quantidade zero, negativa ou texto é recusado', () => {
 
     assert.equal(pedido.itens.length, 2)
 })
+
+test('CASOS EXTREMOS - subtotal arredondado: 3 * R$0,10 = R$0,30', () => {
+    // Em java, 0.1 * 3 dá 0.30000000000000004
+    const barato = { id: 9, nome: "bala", preco: 0.1, categoria: 'alimentos', vendedorId: 3 }
+    const pedido = new Pedido(clienteNordeste, [{ produto: barato, quantidade: 3}])
+
+    assert.equal(pedido.subtotal, 0.3)
+})
