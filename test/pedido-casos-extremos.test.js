@@ -70,3 +70,13 @@ test('CASOS EXTREMOS - pedido cancelado recusa mudança de itens e cupons', () =
     assert.equal(pedido.itens.length, 2)
     assert.equal(pedido.cupons.length, 0)
 })
+
+test('CASOS EXTREMOS - quantidade zero, negativa ou texto é recusado', () => {
+    const pedido = novoPedido()
+
+    assert.throws(() => pedido.adicionarItem(mouse, 0), /Quantidade inválida/ )
+    assert.throws(() => pedido.adicionarItem(mouse, -3), /Quantidade inválida/ )
+    assert.throws(() => pedido.adicionarItem(mouse, '15'), /Quantidade inválida/ )
+
+    assert.equal(pedido.itens.length, 2)
+})
