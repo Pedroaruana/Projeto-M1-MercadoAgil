@@ -88,3 +88,11 @@ test('CASOS EXTREMOS - subtotal arredondado: 3 * R$0,10 = R$0,30', () => {
 
     assert.equal(pedido.subtotal, 0.3)
 })
+
+test('CASOS EXTREMOS - Aplica um cupom com valor mínimo e depois remove um item da erro ao concluir', () => {
+    const pedido = novoPedido()
+    pedido.aplicarCupom(bemvindo10)
+    pedido.removerItem(mouse.id)
+
+    assert.throws(() => pedido.confirmar(estoqueComSaldo()), /exige pedido de no mínimo/)
+})
