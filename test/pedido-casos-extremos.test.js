@@ -38,3 +38,11 @@ test('CASOS EXTREMOS - Cupom repetido é recusado', () => {
     assert.throws(() => pedido.aplicarCupom(bemvindo10), /já foi aplicado/)
     assert.equal(pedido.cupons.length, 1)
 })
+
+test('CASOS EXTREMOS - cancelar pedido já cancelado dá erro claro', () => {
+    const pedido = novoPedido()
+    pedido.cancelar()
+
+    assert.equal(pedido.status, 'cancelado')
+    assert.throws(() => pedido.cancelar(), /Pedido já está cancelado/)
+})
