@@ -89,7 +89,7 @@ test('CASOS EXTREMOS - subtotal arredondado: 3 * R$0,10 = R$0,30', () => {
     assert.equal(pedido.subtotal, 0.3)
 })
 
-test('CASOS EXTREMOS - cliente aplica um cupom com valor mínimo e depois remove um item causa queda no subtotal da erro ao concluir', () => {
+test('CASOS EXTREMOS - subtotal abaixo do mínimo do cupom nega a confirmação', () => {
     const pedido = novoPedido()
     pedido.aplicarCupom(bemvindo10)
     pedido.removerItem(mouse.id)
@@ -101,4 +101,14 @@ test('CASOS EXTREMOS - Pedido vazio não cobra frete', () => {
     const pedido = new Pedido(clienteNordeste, [])
 
     assert.equal(pedido.frete, 0)
+})
+
+test('CASOS EXTREMOS - cupom vencido entre a aplicação e confirmação', () => {
+    const cupom = new CupomDesconto('VAIVENCER', 'percentual', 10, '2027-12-31', 0, true)
+    const pedido = novoPedido()
+
+    pedido.aplicarCupom(cupom)
+    cupom.validade = '2020-01-01' // deixando o cupom vencido
+
+    assert.throws(() => pedido.confirmar(estoqueComSaldo()), /Cupom VAIVENCER está vencido/ )
 })
