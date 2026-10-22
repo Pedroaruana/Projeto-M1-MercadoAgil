@@ -86,6 +86,10 @@ export class Pedido {
     const { regiao } = this.#cliente
     const taxaRegiao = FRETE_POR_REGIAO[regiao]
 
+    if (this.#itens.length === 0) {
+      return 0
+    }
+
     if (taxaRegiao === undefined) {
       throw new Error(`Região de entrega inválida: ${regiao}`)
     }
@@ -162,6 +166,18 @@ export class Pedido {
     return Object.assign(new Error(erros.join(' | ')), { erros })
   }
 
+  // Cupom vencido é recusado, mesmo que estivesse válido quando foi cadastrado
+  // O subtotal (antes dos descontos) precisa atingir o valor mínimo do cupom
+  #validarCupom(cupom) {
+    if (!cupom.estaValido()) {
+      throw new Error(`Cupom ${cupom.codigo} está vencido`)
+    }
+
+    if (this.subtotal < cupom.valorMinimo) {
+      throw new Error(`Cupom ${cupom.codigo} exige pedido de no mínimo ${formatarReais(cupom.valorMinimo)} (subtotal atual: ${formatarReais(this.subtotal)})`)
+    }
+  }
+
   // Confirma o pedido: verifica TODOS os itens no estoque de uma vez (tudo ou nada).
   // Se faltar qualquer item, nada é confirmado e nada sai do estoque.
   confirmar(estoque) {
@@ -172,6 +188,8 @@ export class Pedido {
     if (this.#itens.length === 0) {
       throw new Error('Pedido vazio não pode ser confirmado')
     }
+
+    this.#cupons.forEach((cupom) => this.#validarCupom(cupom))
 
     // baixar() confere todos os itens antes de mexer em qualquer quantidade
     const resultado = estoque.baixar(this.#itensParaEstoque())
@@ -275,16 +293,8 @@ export class Pedido {
     }
 
     // Cupom vencido é recusado, mesmo que estivesse válido quando foi cadastrado
-    if (!cupom.estaValido()) {
-      throw new Error(`Cupom ${cupom.codigo} está vencido`)
-    }
-
     // O subtotal (antes dos descontos) precisa atingir o valor mínimo do cupom
-    if (this.subtotal < cupom.valorMinimo) {
-      throw new Error(
-        `Cupom ${cupom.codigo} exige pedido de no mínimo ${formatarReais(cupom.valorMinimo)} (subtotal atual: ${formatarReais(this.subtotal)})`,
-      )
-    }
+    this.#validarCupom(cupom)
 
     // O mesmo cupom não pode entrar duas vezes
     if (this.#cupons.some(({ codigo }) => codigo === cupom.codigo)) {
@@ -307,7 +317,19 @@ export class Pedido {
     return this.cupons
   }
 
+  removerCupom(codigo) {
+    this.#garantirAberto()
 
+    const indice = this.#cupons.findIndex((cupom) => cupom.codigo === codigo)
+
+    if (indice === -1) {
+      throw new Error(`Cupom não encontrado no pedido: ${codigo}`)
+    }
+
+    const removido = this.#cupons[indice]
+    this.#cupons = this.#cupons.filter((_, i) => i !== indice)
+    return removido
+  }
 
 }
 
