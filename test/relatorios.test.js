@@ -129,4 +129,3 @@ test('pedidos abertos e cancelados não entram nos relatórios', () => {
         { totalTributos: 14.4, totalComissoes: 21.6 },
     )
 })
-

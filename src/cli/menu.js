@@ -33,7 +33,7 @@ export const iniciarMenu = async () => {
       console.log('0 - Sair ');
 
       opcao = await terminal.question('Escolha somente uma opção: ');
-      
+
       if (opcao === '0') {
           console.log('Encerrando o MercadoÁgil...')
         } else if (opcao === '1') {

@@ -81,7 +81,7 @@ export class Marketplace {
 
   #produtoPorId(produtoId) {
     return this.#produtos.find((produto) => mesmoId(produto.id, produtoId))
-  } 
+  }
 
   cadastrarCliente(dados) {
     const validacao = validarCliente(dados)
@@ -374,7 +374,7 @@ export class Marketplace {
       return { ...cupom, validade: new Date(cupom.validade) }
     })
   }
-  
+
   // Cria um pedido aberto para o cliente do CPF informado (com ou sem pontuação).
   criarPedido(cpf) {
     return this.#executar(() => {

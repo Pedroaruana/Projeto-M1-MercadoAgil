@@ -8,7 +8,7 @@ const mouse = { id: 1, nome: 'Mouse', preco: 120, categoria: 'eletronicos', vend
 const livro = { id: 2, nome: 'Livro de JavaScript', preco: 80, categoria: 'livros', vendedorId: 2 }
 const clienteNordeste = { nome: 'Maria', regiao: 'Nordeste' }
 
-const novoPedido = () => 
+const novoPedido = () =>
     new Pedido(clienteNordeste, [
         { produto: mouse, quantidade: 1},
         { produto: livro, quantidade: 1},

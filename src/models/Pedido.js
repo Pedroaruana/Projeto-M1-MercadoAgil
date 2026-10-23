@@ -56,11 +56,11 @@ export class Pedido {
     return this.#itens.reduce((soma, { quantidade }) => soma + quantidade, 0)
   }
 
-  // Desconto total dos cupons. 
+  // Desconto total dos cupons.
   // conversas com a equipe PERMITIU A APLICAÇÃO DE 2 CUPONS PERCENTUAIS SUCESSIVAS
   get desconto() {
     const subtotal = this.subtotal
-    
+
     // filtrando os tipos de cupons
     const percentuais = this.#cupons.filter(({ tipo }) => tipo === 'percentual')
     const fixos = this.#cupons.filter(({ tipo }) => tipo === 'fixo')
@@ -127,7 +127,7 @@ export class Pedido {
     )
   }
 
-  
+
   get repasses() {
     if (this.#status !== STATUS_PEDIDO.CONFIRMADO) {
       return {}
@@ -260,10 +260,10 @@ export class Pedido {
     // Em caso de um novo produto, adiciona a lista de itens
     const novo = { produto, quantidade }
     this.#itens = [ ...this.#itens, novo]
-    return { ...novo } 
+    return { ...novo }
   }
 
-  // Remover o item inteiro pelo id do produto. Devolve o item removido. 
+  // Remover o item inteiro pelo id do produto. Devolve o item removido.
   removerItem(produtoId) {
     this.#garantirAberto()
 
@@ -332,4 +332,3 @@ export class Pedido {
   }
 
 }
-
