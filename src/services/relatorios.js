@@ -161,3 +161,10 @@ export const totalTributosEComissoes = (pedidos) => {
         totalComissoes: arredondar(totais.comissoes),
     }
 }
+
+export const relatorioFaturamento = (pedidos) => {
+    return {
+        ...relatorioBasico(pedidos),
+        ...totalTributosEComissoes(pedidos),
+    }
+}

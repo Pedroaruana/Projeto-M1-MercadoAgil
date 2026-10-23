@@ -9,6 +9,12 @@ import { Cliente } from '../models/Cliente.js'
 import { Vendedor } from '../models/Vendedor.js'
 import { Produto } from '../models/Produto.js'
 import { CupomDesconto } from '../models/CupomDesconto.js'
+import {
+  relatorioBasico,
+  faturamentoPorCategoria,
+  repassePorVendedor,
+  top3ProdutosMaisVendidos,
+} from './relatorios.js'
 import { validarCliente } from '../schemas/clienteSchema.js'
 import { validarVendedor } from '../schemas/vendedorSchema.js'
 import { validarProduto } from '../schemas/produtoSchema.js'
@@ -481,6 +487,7 @@ export class Marketplace {
     })
   }
 
+
   listarPedidos() {
     return this.#executar(() =>
       this.#pedidos.map(({ id, pedido }) => ({
@@ -490,5 +497,33 @@ export class Marketplace {
         total: pedido.total,
       })),
     )
+  }
+
+  relatorioFaturamento() {
+    return this.#executar(() => {
+      const pedidos = this.#pedidos.map(({ pedido }) => pedido)
+      return relatorioBasico(pedidos)
+    })
+  }
+
+  relatorioPorCategoria() {
+    return this.#executar(() => {
+      const pedidos = this.#pedidos.map(({ pedido }) => pedido)
+      return faturamentoPorCategoria(pedidos)
+    })
+  }
+
+  relatorioRepasse() {
+    return this.#executar(() => {
+      const pedidos = this.#pedidos.map(({ pedido }) => pedido)
+      return repassePorVendedor(pedidos, this.#vendedores)
+    })
+  }
+
+  relatorioTop3() {
+    return this.#executar(() => {
+      const pedidos = this.#pedidos.map(({ pedido }) => pedido)
+      return top3ProdutosMaisVendidos(pedidos)
+    })
   }
 }

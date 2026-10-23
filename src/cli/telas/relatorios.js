@@ -4,7 +4,18 @@
 import { executarMenu, mostrarResposta, titulo, pegar, reais } from '../ui.js';
 import { exibirRelatorioBasico } from '../exibirRelatorioBasico.js';
 // Campos que são quantidade/identificação (não são dinheiro).
-const NAO_MONETARIOS = ['id', 'posicao', 'quantidade', 'qtd', 'unidades', 'vendidos', 'pedidos'];
+const NAO_MONETARIOS = [
+  'id',
+  'posicao',
+  'quantidade',
+  'qtd',
+  'unidades',
+  'vendidos',
+  'pedidos',
+  'vendedorId',
+  'produtoId',
+  'quantidadeVendida',
+];
 
 const comoMoeda = (linha) =>
   Object.fromEntries(
