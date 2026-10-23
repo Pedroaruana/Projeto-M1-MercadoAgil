@@ -1,4 +1,4 @@
-js
+
 import { sucesso, falha } from '../utils/resposta.js'
 
 export function validarDados(schema, dados) {
