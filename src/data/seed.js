@@ -1,6 +1,7 @@
 // Dados de exemplo carregados ao iniciar.
 // Mínimo: 3 clientes, 3 vendedores, 8 produtos de 3 categorias, 3 cupons com validade futura.
 // Incluir os dados do pedido de exemplo do enunciado (Mouse R$ 120 e Livro de JavaScript R$ 80, cliente do Nordeste).
+import { sucesso, falha } from '../utils/resposta.js'
 
 export const seed = {
   clientes: [
@@ -144,5 +145,37 @@ export const seed = {
       cumulativo: true,
     },
   ],
+}
+
+export const carregarSeed = (marketplace) => {
+  const quantidades = Object.fromEntries(
+    seed.estoque.map(({ produtoId, quantidade }) => [produtoId, quantidade]),
+  )
+
+  // A ordem importa: vendedores antes dos produtos.
+  const respostas = [
+    ...seed.clientes.map((cliente) => marketplace.cadastrarCliente(cliente)),
+    ...seed.vendedores.map((vendedor) => marketplace.cadastrarVendedor(vendedor)),
+    ...seed.produtos.map((produto) =>
+      marketplace.cadastrarProduto({
+        ...produto,
+        quantidade: quantidades[produto.id] ?? 0,
+      }),
+    ),
+    ...seed.cupons.map((cupom) => marketplace.cadastrarCupom(cupom)),
+  ]
+
+  const erros = respostas
+    .filter((resposta) => !resposta.ok)
+    .flatMap((resposta) => resposta.erros)
+
+  return erros.length === 0
+    ? sucesso({
+        clientes: seed.clientes.length,
+        vendedores: seed.vendedores.length,
+        produtos: seed.produtos.length,
+        cupons: seed.cupons.length,
+      })
+    : falha(erros)
 }
 
