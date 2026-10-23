@@ -5,6 +5,14 @@ import { Estoque } from '../models/Estoque.js'
 import { Pedido } from '../models/Pedido.js'
 import { arredondar } from '../utils/dinheiro.js'
 import { sucesso, falha } from '../utils/resposta.js'
+import { Cliente } from '../models/Cliente.js'
+import { Vendedor } from '../models/Vendedor.js'
+import { Produto } from '../models/Produto.js'
+import { CupomDesconto } from '../models/CupomDesconto.js'
+import { validarCliente } from '../schemas/clienteSchema.js'
+import { validarVendedor } from '../schemas/vendedorSchema.js'
+import { validarProduto } from '../schemas/produtoSchema.js'
+import { validarCupom } from '../schemas/cupomSchema.js'
 
 const soDigitos = (texto) => String(texto ?? '').replace(/\D/g, '')
 const mesmoId = (a, b) => String(a) === String(b)
@@ -17,14 +25,34 @@ export class Marketplace {
   #pedidos = [] // [{ id, pedido }]
   #estoque
   #proximoIdPedido = 1
+  #proximoIdCliente = 1
+  #proximoIdVendedor = 1
+  #proximoIdProduto = 1
+
 
   // Dados iniciais opcionais. Os cadastros (issue de CRUD) também usam essas listas.
-  constructor({ clientes = [], vendedores = [], produtos = [], cupons = [], estoque = new Estoque() } = {}) {
+ constructor({
+    clientes = [],
+    vendedores = [],
+    produtos = [],
+    cupons = [],
+    estoque = new Estoque()
+  } = {}) {
     this.#clientes = [...clientes]
     this.#vendedores = [...vendedores]
     this.#produtos = [...produtos]
     this.#cupons = [...cupons]
     this.#estoque = estoque
+
+    this.#proximoIdCliente = this.#calcularProximoId(clientes)
+    this.#proximoIdVendedor = this.#calcularProximoId(vendedores)
+    this.#proximoIdProduto = this.#calcularProximoId(produtos)
+  }
+  #calcularProximoId(lista) {
+    return lista.reduce(
+      (maior, item) => Math.max(maior, Number(item.id) || 0),
+      0
+    ) + 1
   }
 
   // Roda a ação e transforma o resultado ou o erro no formato { ok, dados } / { ok, erros }.
@@ -35,6 +63,10 @@ export class Marketplace {
     } catch (erro) {
       return falha(erro.erros ?? [erro.message])
     }
+  }
+   #clienteSeguro(cliente) {
+    const { cpf, ...dadosSeguros } = cliente
+    return { ...dadosSeguros }
   }
 
   #pedidoPorId(id) {
@@ -49,8 +81,300 @@ export class Marketplace {
 
   #produtoPorId(produtoId) {
     return this.#produtos.find((produto) => mesmoId(produto.id, produtoId))
+  } 
+
+  cadastrarCliente(dados) {
+    const validacao = validarCliente(dados)
+
+    if (!validacao.ok) {
+      return validacao
+    }
+
+    return this.#executar(() => {
+      const { nome, email, cpf, regiao } = validacao.dados
+
+      const existente = this.#clientes.find(
+        (cliente) => soDigitos(cliente.cpf) === soDigitos(cpf)
+      )
+
+      if (existente) {
+        throw new Error('Já existe um cliente cadastrado com este CPF.')
+      }
+
+      const cliente = new Cliente(
+        this.#proximoIdCliente,
+        nome,
+        email,
+        cpf,
+        regiao
+      )
+
+      this.#clientes = [...this.#clientes, cliente]
+      this.#proximoIdCliente += 1
+
+      return this.#clienteSeguro(cliente)
+    })
   }
 
+  listarClientes() {
+    return this.#executar(() =>
+      this.#clientes.map((cliente) => this.#clienteSeguro(cliente))
+    )
+  }
+
+  excluirCliente(cpf) {
+    return this.#executar(() => {
+      const indice = this.#clientes.findIndex(
+        (cliente) => soDigitos(cliente.cpf) === soDigitos(cpf)
+      )
+
+      if (indice === -1) {
+        throw new Error('Cliente não encontrado.')
+      }
+
+      const cliente = this.#clientes[indice]
+
+      this.#clientes = this.#clientes.filter(
+        (_, posicao) => posicao !== indice
+      )
+
+      return this.#clienteSeguro(cliente)
+    })
+  }
+  cadastrarVendedor(dados) {
+    const entrada = {
+      ...dados,
+      nome: dados?.nome ?? dados?.nomeLoja
+    }
+
+    const validacao = validarVendedor(entrada)
+
+    if (!validacao.ok) {
+      return validacao
+    }
+
+    return this.#executar(() => {
+      const { nome, cnpj, email } = validacao.dados
+
+      const existente = this.#vendedores.find(
+        (vendedor) => soDigitos(vendedor.cnpj) === soDigitos(cnpj)
+      )
+
+      if (existente) {
+        throw new Error('Já existe um vendedor cadastrado com este CNPJ.')
+      }
+
+      const vendedor = new Vendedor(
+        this.#proximoIdVendedor,
+        nome,
+        cnpj,
+        email
+      )
+
+      this.#vendedores = [...this.#vendedores, vendedor]
+      this.#proximoIdVendedor += 1
+
+      return { ...vendedor }
+    })
+  }
+
+  listarVendedores() {
+    return this.#executar(() =>
+      this.#vendedores.map((vendedor) => ({ ...vendedor }))
+    )
+  }
+
+  excluirVendedor(cnpj) {
+    return this.#executar(() => {
+      const indice = this.#vendedores.findIndex(
+        (vendedor) => soDigitos(vendedor.cnpj) === soDigitos(cnpj)
+      )
+
+      if (indice === -1) {
+        throw new Error('Vendedor não encontrado.')
+      }
+
+      const vendedor = this.#vendedores[indice]
+
+      this.#vendedores = this.#vendedores.filter(
+        (_, posicao) => posicao !== indice
+      )
+
+      return { ...vendedor }
+    })
+  }
+  cadastrarProduto(dados) {
+    const vendedor = this.#vendedores.find((item) => {
+      if (dados?.vendedorId !== undefined) {
+        return mesmoId(item.id, dados.vendedorId)
+      }
+
+      return (
+        typeof dados?.vendedorCnpj === 'string' &&
+        soDigitos(item.cnpj) === soDigitos(dados.vendedorCnpj)
+      )
+    })
+
+    if (!vendedor) {
+      return falha(
+        'Vendedor não encontrado. Cadastre o vendedor antes do produto.'
+      )
+    }
+
+    const entrada = {
+      ...dados,
+      vendedorId: vendedor.id
+    }
+
+    const validacao = validarProduto(entrada)
+
+    if (!validacao.ok) {
+      return validacao
+    }
+
+    const quantidade = dados?.quantidade ?? 0
+
+    if (!Number.isInteger(quantidade) || quantidade < 0) {
+      return falha(
+        'A quantidade deve ser um número inteiro igual ou maior que zero.'
+      )
+    }
+
+    return this.#executar(() => {
+      const { nome, preco, categoria, vendedorId } = validacao.dados
+      const id = this.#proximoIdProduto
+
+      const produto = new Produto(
+        id,
+        nome,
+        preco,
+        categoria,
+        vendedorId
+      )
+
+      const resultadoEstoque = this.#estoque.definirQuantidade(
+        id,
+        quantidade
+      )
+
+      if (!resultadoEstoque.ok) {
+        throw { erros: resultadoEstoque.erros }
+      }
+
+      this.#produtos = [...this.#produtos, produto]
+      this.#proximoIdProduto += 1
+
+      return { ...produto, quantidade }
+    })
+  }
+
+  listarProdutos() {
+    return this.#executar(() =>
+      this.#produtos.map((produto) => ({
+        ...produto,
+        quantidade: this.#estoque.consultar(produto.id).dados.quantidade
+      }))
+    )
+  }
+
+  excluirProduto(id) {
+    return this.#executar(() => {
+      const indice = this.#produtos.findIndex(
+        (produto) => mesmoId(produto.id, id)
+      )
+
+      if (indice === -1) {
+        throw new Error('Produto não encontrado.')
+      }
+
+      const produto = this.#produtos[indice]
+
+      this.#produtos = this.#produtos.filter(
+        (_, posicao) => posicao !== indice
+      )
+
+      return { ...produto }
+    })
+  }
+
+  cadastrarCupom(dados) {
+    const entrada = {
+      ...dados,
+      codigo: typeof dados?.codigo === 'string'
+        ? dados.codigo.trim().toUpperCase()
+        : dados?.codigo
+    }
+
+    const validacao = validarCupom(entrada)
+
+    if (!validacao.ok) {
+      return validacao
+    }
+
+    return this.#executar(() => {
+      const {
+        codigo,
+        tipo,
+        valor,
+        validade,
+        valorMinimo,
+        cumulativo
+      } = validacao.dados
+
+      const existente = this.#cupons.find(
+        (cupom) => cupom.codigo.toUpperCase() === codigo
+      )
+
+      if (existente) {
+        throw new Error('Já existe um cupom cadastrado com este código.')
+      }
+
+      const cupom = new CupomDesconto(
+        codigo,
+        tipo,
+        valor,
+        validade,
+        valorMinimo,
+        cumulativo
+      )
+
+      this.#cupons = [...this.#cupons, cupom]
+
+      return { ...cupom, validade: new Date(cupom.validade) }
+    })
+  }
+
+  listarCupons() {
+    return this.#executar(() =>
+      this.#cupons.map((cupom) => ({
+        ...cupom,
+        validade: new Date(cupom.validade)
+      }))
+    )
+  }
+
+  excluirCupom(codigo) {
+    return this.#executar(() => {
+      const procurado = String(codigo ?? '').trim().toUpperCase()
+
+      const indice = this.#cupons.findIndex(
+        (cupom) => cupom.codigo.toUpperCase() === procurado
+      )
+
+      if (indice === -1) {
+        throw new Error('Cupom não encontrado.')
+      }
+
+      const cupom = this.#cupons[indice]
+
+      this.#cupons = this.#cupons.filter(
+        (_, posicao) => posicao !== indice
+      )
+
+      return { ...cupom, validade: new Date(cupom.validade) }
+    })
+  }
+  
   // Cria um pedido aberto para o cliente do CPF informado (com ou sem pontuação).
   criarPedido(cpf) {
     return this.#executar(() => {
