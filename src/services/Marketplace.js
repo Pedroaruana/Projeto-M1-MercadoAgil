@@ -295,6 +295,27 @@ export class Marketplace {
 
       const produto = this.#produtos[indice]
 
+      // Impede a exclusão de produtos vinculados a pedidos abertos.
+      const pedidosAbertos = this.#pedidos.filter(
+        ({ pedido }) =>
+          pedido.status === 'aberto' &&
+          pedido.itens.some(
+            (item) => mesmoId(item.produto.id, produto.id)
+          )
+      )
+
+      if (pedidosAbertos.length > 0) {
+        const numerosPedidos = pedidosAbertos
+          .map(({ id }) => `#${id}`)
+          .join(', ')
+
+        throw new Error(
+          `Não é possível excluir o produto "${produto.nome}". ` +
+          `Ele está vinculado ao(s) pedido(s) aberto(s): ${numerosPedidos}.`
+        )
+      }
+
+
       this.#produtos = this.#produtos.filter(
         (_, posicao) => posicao !== indice
       )
