@@ -10,7 +10,7 @@ import { Vendedor } from '../models/Vendedor.js'
 import { Produto } from '../models/Produto.js'
 import { CupomDesconto } from '../models/CupomDesconto.js'
 import {
-  relatorioBasico,
+  relatorioFaturamento,
   faturamentoPorCategoria,
   repassePorVendedor,
   top3ProdutosMaisVendidos,
@@ -502,7 +502,7 @@ export class Marketplace {
   relatorioFaturamento() {
     return this.#executar(() => {
       const pedidos = this.#pedidos.map(({ pedido }) => pedido)
-      return relatorioBasico(pedidos)
+      return relatorioFaturamento(pedidos)
     })
   }
 
