@@ -380,6 +380,126 @@ export class Marketplace {
       return { ...cupom, validade: new Date(cupom.validade) }
     })
   }
+   buscarCliente(termo) {
+    return this.#executar(() => {
+      const busca = String(termo ?? '').trim()
+
+      if (!busca) {
+        throw new Error('Informe o CPF ou nome do cliente.')
+      }
+
+      const cpf = soDigitos(busca)
+
+      const cliente = this.#clientes.find(
+        (item) => cpf !== '' && soDigitos(item.cpf) === cpf
+      )
+
+      if (cliente) {
+        return this.#clienteSeguro(cliente)
+      }
+
+      const encontrados = this.#clientes.filter(
+        (item) =>
+          item.nome.toLowerCase().includes(busca.toLowerCase())
+      )
+
+      if (encontrados.length === 0) {
+        throw new Error('Cliente não encontrado.')
+      }
+
+      return encontrados.map(
+        (item) => this.#clienteSeguro(item)
+      )
+    })
+  }
+
+  buscarVendedor(termo) {
+    return this.#executar(() => {
+      const busca = String(termo ?? '').trim()
+
+      if (!busca) {
+        throw new Error('Informe o CNPJ ou nome do vendedor.')
+      }
+
+      const cnpj = soDigitos(busca)
+
+      const vendedor = this.#vendedores.find(
+        (item) => cnpj !== '' && soDigitos(item.cnpj) === cnpj
+      )
+
+      if (vendedor) {
+        return { ...vendedor }
+      }
+
+      const encontrados = this.#vendedores.filter(
+        (item) =>
+          item.nome.toLowerCase().includes(busca.toLowerCase())
+      )
+
+      if (encontrados.length === 0) {
+        throw new Error('Vendedor não encontrado.')
+      }
+
+      return encontrados.map((item) => ({ ...item }))
+    })
+  }
+  buscarProduto(termo) {
+    return this.#executar(() => {
+      const busca = String(termo ?? '').trim()
+
+      if (!busca) {
+        throw new Error('Informe o ID ou nome do produto.')
+      }
+
+      const produto = this.#produtos.find(
+        (item) => mesmoId(item.id, busca)
+      )
+
+      if (produto) {
+        return {
+          ...produto,
+          quantidade: this.#estoque.consultar(produto.id).dados.quantidade
+        }
+      }
+
+      const encontrados = this.#produtos.filter(
+        (item) =>
+          item.nome.toLowerCase().includes(busca.toLowerCase())
+      )
+
+      if (encontrados.length === 0) {
+        throw new Error('Produto não encontrado.')
+      }
+
+      return encontrados.map((item) => ({
+        ...item,
+        quantidade: this.#estoque.consultar(item.id).dados.quantidade
+      }))
+    })
+  }
+
+  buscarCupom(codigo) {
+    return this.#executar(() => {
+      const busca = String(codigo ?? '').trim().toUpperCase()
+
+      if (!busca) {
+        throw new Error('Informe o código do cupom.')
+      }
+
+      const cupom = this.#cupons.find(
+        (item) => String(item.codigo).toUpperCase() === busca
+      )
+
+      if (!cupom) {
+        throw new Error('Cupom não encontrado.')
+      }
+
+      return {
+        ...cupom,
+        validade: new Date(cupom.validade)
+      }
+    })
+  }
 
   // Cria um pedido aberto para o cliente do CPF informado (com ou sem pontuação).
   criarPedido(cpf) {
