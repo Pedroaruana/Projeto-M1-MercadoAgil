@@ -32,6 +32,7 @@ const NOMES = {
   confirmarPedido: 'confirmarPedido',
   cancelarPedido: 'cancelarPedido',
   listarPedidos: 'listarPedidos',
+  historicoCliente: 'historicoCliente',
   // relatórios
   relatorioFaturamento: 'relatorioFaturamento',
   relatorioPorCategoria: 'relatorioPorCategoria',

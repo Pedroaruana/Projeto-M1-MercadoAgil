@@ -161,6 +161,30 @@ export async function telaPedidos({ servico, perguntar }) {
     );
   };
 
+  // Histórico de um cliente: pedidos dele e quanto já gastou (só confirmados)
+  const historicoCliente = async () => {
+    const cpf = (await perguntar('CPF do cliente: ')).trim();
+    const resposta = await servico.historicoCliente(cpf);
+    if (!mostrarResposta(resposta)) return;
+
+    const { cliente, pedidos, totalGasto } = resposta.dados;
+    titulo(`Histórico de ${cliente}`);
+
+    if (pedidos.length === 0) {
+      console.log('Este cliente ainda não fez pedidos.');
+      return;
+    }
+
+    console.table(
+      pedidos.map((pedido) => ({
+        pedido: `#${pedido.id}`,
+        status: pedido.status,
+        total: reais(pedido.total),
+      })),
+    )
+    console.log(`Total gasto (só pedidos confirmados): ${reais(totalGasto)}`);
+  }
+
   return executarMenu({
     nome: 'Pedidos',
     perguntar,
@@ -173,6 +197,7 @@ export async function telaPedidos({ servico, perguntar }) {
       { rotulo: 'Confirmar pedido', acao: confirmarPedido },
       { rotulo: 'Cancelar pedido', acao: cancelarPedido },
       { rotulo: 'Listar pedidos', acao: listarPedidos },
+      { rotulo: 'Histórico do cliente', acao: historicoCliente },
     ],
   });
 }
