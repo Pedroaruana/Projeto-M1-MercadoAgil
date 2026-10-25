@@ -19,6 +19,7 @@ import { validarCliente } from '../schemas/clienteSchema.js'
 import { validarVendedor } from '../schemas/vendedorSchema.js'
 import { validarProduto } from '../schemas/produtoSchema.js'
 import { validarCupom } from '../schemas/cupomSchema.js'
+import { LIMITE_ESTOQUE_BAIXO } from '../config/regras.js'
 
 const soDigitos = (texto) => String(texto ?? '').replace(/\D/g, '')
 const mesmoId = (a, b) => String(a) === String(b)
@@ -280,6 +281,19 @@ export class Marketplace {
         ...produto,
         quantidade: this.#estoque.consultar(produto.id).dados.quantidade
       }))
+    )
+  }
+
+  produtosEstoqueBaixo() {
+    return this.#executar(() =>
+      this.#produtos
+        .map((produto) => ({
+          id: produto.id,
+          nome: produto.nome,
+          quantidade: this.#estoque.consultar(produto.id).dados.quantidade,
+        }))
+        .filter(({ quantidade }) => quantidade < LIMITE_ESTOQUE_BAIXO)
+        .sort((a, b) => a.quantidade - b.quantidade),
     )
   }
 

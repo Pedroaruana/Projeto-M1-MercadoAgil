@@ -45,3 +45,5 @@ export const STATUS_PEDIDO = {
   CONFIRMADO: 'confirmado',
   CANCELADO: 'cancelado',
 }
+
+export const LIMITE_ESTOQUE_BAIXO = 3
