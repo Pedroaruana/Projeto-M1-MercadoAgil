@@ -81,6 +81,18 @@ export function telaRelatorios({ servico, perguntar }) {
       .map((item, indice) => ({ posicao: `${indice + 1}º`, ...item }));
     tabelaMoeda(linhas);
   };
+  
+  const estoqueBaixo = async () => {
+    const resposta = await servico.produtosEstoqueBaixo();
+    if (!mostrarResposta(resposta)) return;
+
+    titulo('Produtos com estoque baixo');
+    if(resposta.dados.length === 0) {
+      console.log('Nenhum produto com estoque baixo');
+      return;
+    }
+    console.table(resposta.dados);
+  }
 
   const todos = async () => {
     await faturamento();
@@ -97,6 +109,7 @@ export function telaRelatorios({ servico, perguntar }) {
       { rotulo: 'Faturamento por categoria', acao: porCategoria },
       { rotulo: 'Repasse por vendedor', acao: repasse },
       { rotulo: 'Top 3 produtos mais vendidos', acao: top3 },
+      { rotulo: 'Produtos com estoque baixo', acao: estoqueBaixo },
       { rotulo: 'Ver todos', acao: todos },
     ],
   });

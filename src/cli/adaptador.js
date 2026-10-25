@@ -37,6 +37,7 @@ const NOMES = {
   relatorioPorCategoria: 'relatorioPorCategoria',
   relatorioRepasse: 'relatorioRepasse',
   relatorioTop3: 'relatorioTop3',
+  produtosEstoqueBaixo: 'produtosEstoqueBaixo',
 };
 
 export function criarServico(marketplace) {
