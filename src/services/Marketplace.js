@@ -4,6 +4,7 @@
 import { Estoque } from '../models/Estoque.js'
 import { Pedido } from '../models/Pedido.js'
 import { arredondar } from '../utils/dinheiro.js'
+import { STATUS_PEDIDO } from '../config/regras.js'
 import { sucesso, falha } from '../utils/resposta.js'
 import { Cliente } from '../models/Cliente.js'
 import { Vendedor } from '../models/Vendedor.js'
@@ -638,6 +639,36 @@ export class Marketplace {
         total: pedido.total,
       })),
     )
+  }
+
+  // Histórico do cliente pelo CPF: pedidos dele e o total gasto (só pedidos confirmados).
+  // O CPF é usado só para procurar e nunca volta na resposta.
+  historicoCliente(cpf) {
+    return this.#executar(() => {
+      const procurado = soDigitos(cpf)
+
+      if (procurado === '') {
+        throw new Error('Informe o CPF do cliente.')
+      }
+
+      const cliente = this.#clientes.find((item) => soDigitos(item.cpf) === procurado)
+
+      if (!cliente) {
+        throw new Error('Cliente não encontrado.')
+      }
+
+      const pedidos = this.#pedidos
+        .filter(({ pedido }) => soDigitos(pedido.cliente.cpf) === procurado)
+        .map(({ id, pedido }) => ({ id, status: pedido.status, total: pedido.total }))
+
+      const totalGasto = arredondar(
+        pedidos
+          .filter(({ status }) => status === STATUS_PEDIDO.CONFIRMADO)
+          .reduce((soma, { total }) => soma + total, 0),
+      )
+
+      return { cliente: cliente.nome, pedidos, totalGasto }
+    })
   }
 
   relatorioFaturamento() {
