@@ -1,3 +1,4 @@
+import { LIMITE_ESTOQUE_BAIXO } from '../../config/regras.js';
 // src/cli/dev/marketplaceMock.js
 // Marketplace FALSO só para testar as telas enquanto o real não chega.
 // As contas aqui são simplificadas de propósito. As de verdade são do grupo Azul.
@@ -148,5 +149,11 @@ export function criarMarketplaceMock() {
       { vendedor: 'Livraria Sol', bruto: 80, comissao: 12, repasse: 68 },
     ]),
     relatorioTop3: () => ok([{ nome: 'Mouse', quantidade: 1 }, { nome: 'Livro de JavaScript', quantidade: 1 }]),
+    produtosEstoqueBaixo: () => ok(
+      banco.produtos
+        .filter(({ quantidade }) => quantidade < LIMITE_ESTOQUE_BAIXO)
+        .map(({ id, nome, quantidade }) => ({ id, nome, quantidade }))
+        .sort((a, b) => a.quantidade - b.quantidade),
+    ),
   };
 }

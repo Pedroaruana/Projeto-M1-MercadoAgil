@@ -5,6 +5,7 @@ import { Estoque } from '../src/models/Estoque.js'
 import { Cliente } from '../src/models/Cliente.js'
 import { Produto } from '../src/models/Produto.js'
 import { CupomDesconto } from '../src/models/CupomDesconto.js'
+import { LIMITE_ESTOQUE_BAIXO } from '../src/config/regras.js'
 
 const CPF = '52998224725'
 
@@ -173,4 +174,31 @@ test('os números dos pedidos seguem a ordem e não se repetem', () => {
 
   assert.equal(marketplace.criarPedido(CPF).dados.id, 1)
   assert.equal(marketplace.criarPedido(CPF).dados.id, 2)
+})
+
+test('estoque baixo: lista só os produtos abaixo do limite', () => {
+  const marketplace = novoMarketplace({ mouse: 2, livro: 10 })
+  const { ok, dados } = marketplace.produtosEstoqueBaixo()
+
+  assert.equal(ok, true)
+  assert.deepEqual(dados, [{ id: 1, nome: 'Mouse', quantidade: 2}])
+})
+
+test('estoque baixo: ordena do menor para o maior', () => {
+  const marketplace = novoMarketplace({ mouse: 2, livro: 0 })
+  const { dados } = marketplace.produtosEstoqueBaixo()
+
+  assert.deepEqual(dados.map(({ nome }) => nome), ['Livro de JavaScript', 'Mouse'])
+})
+
+test('estoque baixo: nenhum produto baixo devolve ok com lista vazia', () => {
+  const marketplace = novoMarketplace({ mouse: 10, livro: 10 })
+
+  assert.deepEqual(marketplace.produtosEstoqueBaixo(), { ok: true, dados: [] })
+})
+
+test('estoque baixo: produto exatamente no limite não é alertado', () => {
+  const marketplace = novoMarketplace({ mouse: LIMITE_ESTOQUE_BAIXO, livro: 10 })
+
+  assert.deepEqual(marketplace.produtosEstoqueBaixo().dados, [])
 })
