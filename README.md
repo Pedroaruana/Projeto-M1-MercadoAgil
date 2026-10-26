@@ -206,7 +206,7 @@ Relatório de repasse por vendedor, depois de confirmar o pedido:
 ## Links
 
 - Repositório: https://github.com/Pedroaruana/Projeto-M1-MercadoAgil
-- Post no LinkedIn: _(adicionar o link depois de publicar)_
+- Post no LinkedIn: https://lnkd.in/p/d9HMUV-e
 
 ## Licença
 
